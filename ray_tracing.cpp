@@ -8,19 +8,27 @@
 
 #include <stdio.h>
 
-color ray_color(const ray& r, const hittable& world, int depth) {
+color ray_color(const ray& r, const hittable& world, int depth, color prev_attenuation) {
     hit_record rec;
 
     // If we've exceeded the ray bounce limit, no more light is gathered.
     if (depth <= 0)
         return color(0,0,0);
+    if ((prev_attenuation.x() <= 0.01) &&
+        (prev_attenuation.y() <= 0.01) &&
+        (prev_attenuation.z() <= 0.01) )
+        return color(0,0,0);
 
     if (world.hit(r, 0.001, infinity, rec)) {
+        color tmp_color(0, 0, 0);
         ray scattered;
         color attenuation;
-        if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
-            return attenuation * ray_color(scattered, world, depth-1);
-        return color(0,0,0);
+        if (rec.mat_ptr->is_reflect && rec.mat_ptr->reflect_ray(r, rec, attenuation, scattered))
+            tmp_color += attenuation * ray_color(scattered, world, depth-1, attenuation * prev_attenuation);
+        if (rec.mat_ptr->is_refract && rec.mat_ptr->refract_ray(r, rec, attenuation, scattered))
+            tmp_color += attenuation * ray_color(scattered, world, depth-1, attenuation * prev_attenuation);
+        
+        return tmp_color;
     }
 
     vec3 unit_direction = unit_vector(r.direction());
@@ -55,14 +63,15 @@ hittable_list random_scene() {
                     world.add(make_shared<sphere>(center, 0.2, sphere_material));
                 } else {
                     // glass
-                    sphere_material = make_shared<dielectric>(1.5);
+                    auto albedo = color::random(0.9, 1);
+                    sphere_material = make_shared<dielectric>(1.5, albedo);
                     world.add(make_shared<sphere>(center, 0.2, sphere_material));
                 }
             }
         }
     }
 
-    auto material1 = make_shared<dielectric>(1.5);
+    auto material1 = make_shared<dielectric>(1.5, color(1.0, 1.0, 1.0));
     world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, material1));
 
     auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
@@ -78,10 +87,10 @@ int main() {
 
     // Image
 
-    const auto aspect_ratio = 16.0 / 9.0;
+    const auto aspect_ratio = 3.0 / 2.0;
     const int image_width = 1200;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 100;
+    const int samples_per_pixel = 5;
     const int max_depth = 50;
 
     // World
@@ -110,7 +119,7 @@ int main() {
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
                 ray r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, world, max_depth);
+                pixel_color += ray_color(r, world, max_depth, color(1.0, 1.0, 1.0));
             }
             write_color(pixel_color, samples_per_pixel);
         }
