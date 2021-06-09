@@ -14,9 +14,11 @@ class material {
         virtual bool refract_ray(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
         ) const = 0;
+        virtual color emitted() const = 0;
     public:
         bool is_reflect;
         bool is_refract;
+        bool is_light;
 };
 
 
@@ -25,6 +27,7 @@ class lambertian : public material {
         lambertian(const color& a) : albedo(a) {
             is_reflect = true;
             is_refract = false;
+            is_light = false;
         }
 
         virtual bool reflect_ray(
@@ -47,6 +50,10 @@ class lambertian : public material {
             return false;
         }
 
+        virtual color emitted() const override {
+            return color(0,0,0);
+        }
+
     public:
         color albedo;
 };
@@ -57,6 +64,7 @@ class metal : public material {
         metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {
             is_reflect = true;
             is_refract = false;
+            is_light = false;
         }
 
         virtual bool reflect_ray(
@@ -74,6 +82,10 @@ class metal : public material {
             return false;
         }
 
+        virtual color emitted() const override {
+            return color(0,0,0);
+        }
+
     public:
         color albedo;
         double fuzz;
@@ -84,6 +96,7 @@ class dielectric : public material {
         dielectric(double index_of_refraction, const color& a) : ir(index_of_refraction), albedo(a) {
             is_reflect = true;
             is_refract = true;
+            is_light = false;
         }
 
         virtual bool reflect_ray(
@@ -133,6 +146,10 @@ class dielectric : public material {
             return true;
         }
 
+        virtual color emitted() const override {
+            return color(0,0,0);
+        }
+
     public:
         double ir; // Index of Refraction
         color albedo;
@@ -144,5 +161,33 @@ class dielectric : public material {
             r0 = r0*r0;
             return r0 + (1-r0)*pow((1 - cosine),5);
         }
+};
+
+class light : public material  {
+    public:
+        light(color c) : emit(c) {
+            is_reflect = false;
+            is_refract = false;
+            is_light = true;
+        }
+
+        virtual bool reflect_ray(
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+        ) const override {
+            return false;
+        }
+
+        virtual bool refract_ray(
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+        ) const override {
+            return false;
+        }
+
+        virtual color emitted() const override {
+            return emit;
+        }
+
+    public:
+        color emit;
 };
 #endif

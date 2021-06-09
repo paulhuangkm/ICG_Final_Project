@@ -27,6 +27,8 @@ color ray_color(const ray& r, const hittable& world, int depth, color prev_atten
             tmp_color += attenuation * ray_color(scattered, world, depth-1, attenuation * prev_attenuation);
         if (rec.mat_ptr->is_refract && rec.mat_ptr->refract_ray(r, rec, attenuation, scattered))
             tmp_color += attenuation * ray_color(scattered, world, depth-1, attenuation * prev_attenuation);
+        if (rec.mat_ptr->is_light)
+            tmp_color += rec.mat_ptr->emitted();
         
         return tmp_color;
     }
@@ -87,22 +89,34 @@ int main() {
 
     // Image
 
-    const auto aspect_ratio = 3.0 / 2.0;
-    const int image_width = 1200;
+    const auto aspect_ratio = 16.0 / 9.0;
+    const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 500;
+    const int samples_per_pixel = 100;
     const int max_depth = 50;
 
     // World
 
-    auto world = random_scene();
+    // auto world = random_scene();
+    hittable_list world;
+
+    auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto material_center = make_shared<light>(color(1.0, 1.0, 1.0));
+    auto material_left   = make_shared<dielectric>(1.5, color(1.0, 1.0, 1.0));
+    auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
+
+    world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
+    world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
+    world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
+    world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0), -0.45, material_left));
+    world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
 
     // Camera
 
-    point3 lookfrom(13,2,3);
+    point3 lookfrom(-13,2,10);
     point3 lookat(0,0,0);
     vec3 vup(0,1,0);
-    auto dist_to_focus = 10.0;
+    auto dist_to_focus = 16.5;
     auto aperture = 0.1;
 
     camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
@@ -124,5 +138,5 @@ int main() {
             write_color(pixel_color, samples_per_pixel);
         }
     }
-    fprintf(stderr, "\nFinished!!!");
+    fprintf(stderr, "\nFinished!!!\n");
 }
