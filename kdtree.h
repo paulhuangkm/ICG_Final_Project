@@ -60,34 +60,14 @@ void kdtree::build_tree(vector<shared_ptr<hittable>> &objects){
             bbox_r.upper[i] = max(bbox_r.upper[i], object->bound(i).second);
         }
     }
-    for (int i = 0; i != 3; ++i){
-        fprintf(stderr, "%lf, %lf\n", bbox_r.lower[i], bbox_r.upper[i]);
-    }
     root = __build_tree(objects, 0, bbox_r);
 }
 
 kdnode *kdtree::__build_tree(vector<shared_ptr<hittable>> &objects, int depth, box bbox){
-    // for (auto &object : objects){
-    //     printf("(");
-    //     for (int i = 0; i != 3; ++i)
-    //         printf("%lf,", (object->bound(0).first + object->bound(0).second) / 2);
-    //     printf("), ");
-    // }
-    // printf("\n");
     kdnode *cur = new kdnode;
     if (objects.size() <= 1){
         cur->leaf = true;
         cur->objects = objects;
-        // for (auto &object : objects){
-        //     for (int i = 0; i != 3; ++i){
-        //         auto bound = object->bound(i);
-        //         if (bound.second < bbox.lower[i] || bound.first > bbox.upper[i])
-        //             fprintf(stderr, "not in the box\n");
-        //     }
-        // }
-        // for (int i = 0; i != 3; ++i)
-        //     fprintf(stderr, " (%lf, %lf)", bbox.lower[i], bbox.upper[i]);
-        // fprintf(stderr, "\n");
         return cur;
     }
     for (int i = 0; i != 3; ++i){
@@ -98,6 +78,9 @@ kdnode *kdtree::__build_tree(vector<shared_ptr<hittable>> &objects, int depth, b
             candidates.emplace_back(bound.first, i);
             candidates.emplace_back(bound.second, i);
         }
+        double width = bbox.upper[cur->axis] - bbox.lower[cur->axis];
+        for (double i = 0.01; i <= 0.99; i += 0.01)
+            candidates.emplace_back(bbox.lower[cur->axis] + width * i, -1);
         sort(candidates.begin(), candidates.end());
         
         vector<bool> visit(objects.size(), false);
@@ -106,13 +89,12 @@ kdnode *kdtree::__build_tree(vector<shared_ptr<hittable>> &objects, int depth, b
         pair<double, double> min_t(infinity, 0.0);
         for (int i = 0; i != candidates.size(); ++i){
             auto &cand = candidates[i];
-            if (visit[cand.second])
+            if (cand.second != -1 && visit[cand.second])
                 --rnum;
-            if (lb < cand.first && cand.first < rb && lnum != objects.size() && rnum != objects.size())
+            if (lb + epsilon < cand.first && cand.first < rb - epsilon)
                 min_t = min(min_t, {(cand.first - lb) * lnum + (rb - cand.first) * rnum, cand.first});
-            if (!visit[cand.second])
-                ++lnum;
-            visit[cand.second] = true;
+            if (cand.second != -1 && !visit[cand.second])
+                ++lnum, visit[cand.second] = true;
         }
 
         cur->pos = min_t.second;
@@ -125,7 +107,7 @@ kdnode *kdtree::__build_tree(vector<shared_ptr<hittable>> &objects, int depth, b
                 robjects.push_back(object);
         }
 
-        if (objects.size() == lobjects.size() || objects.size() == robjects.size() || min_t.first == infinity){
+        if ((lobjects.size() == objects.size() && robjects.size() == objects.size()) || min_t.first == infinity){
             ++depth;
             continue;
         }
@@ -138,17 +120,6 @@ kdnode *kdtree::__build_tree(vector<shared_ptr<hittable>> &objects, int depth, b
     }
     cur->leaf = true;
     cur->objects = objects;
-    // for (auto &object : objects){
-    //     for (int i = 0; i != 3; ++i){
-    //         auto bound = object->bound(i);
-    //         if (bound.second < bbox.lower[i] || bound.first > bbox.upper[i])
-    //             fprintf(stderr, "not in the box\n");
-    //     }
-    // }
-    // for (int i = 0; i != 3; ++i)
-    //     fprintf(stderr, " (%lf, %lf)", bbox.lower[i], bbox.upper[i]);
-    // fprintf(stderr, "\n");
-    // fprintf(stderr, "%d\n", objects.size());
     return cur;
 }
 
@@ -188,23 +159,11 @@ bool kdtree::hit(const ray &r, double t_min, double t_max, hit_record &rec) cons
         auto ts = bbox.hit(r, t_min, t_max);
         if (ts.empty()) continue;
         double t_split = (node->pos - origin[node->axis]) / dir[node->axis];
-
-        // fprintf(stderr, "%lf %lf\n", ts[0], ts[1]);
-
-        if (t_split <= ts[1] && ts[1] > t_min){
+        
+        if (t_split <= ts[1] && ts[1] > t_min)
             kdnodes.push(far);
-            if (!far.second.on(r.at(ts[1])))
-                fprintf(stderr, "error0\n");
-        }
-        // else if (far.second.on(r.at(ts[1])))
-        //     fprintf(stderr, "error1\n");
-        if (ts[0] <= t_split && t_split > t_min){
+        if (ts[0] <= t_split && t_split > t_min)
             kdnodes.push(near);
-            if (!near.second.on(r.at(ts[0])))
-                fprintf(stderr, "error2\n");
-        }
-        // else if (near.second.on(r.at(ts[0])))
-        //     fprintf(stderr, "error3\n");
     }
     return false;
 }
