@@ -1,7 +1,12 @@
 #ifndef HITTABLE_H
 #define HITTABLE_H
 
+#include <vector>
+#include <utility>
 #include "rt.h"
+
+using std::vector;
+using std::pair;
 
 class material;
 
@@ -21,6 +26,7 @@ struct hit_record {
 class hittable {
     public:
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+        virtual pair<double, double> bound(int dim) const = 0;
 };
 
 #endif

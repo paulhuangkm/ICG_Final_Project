@@ -12,6 +12,8 @@ class sphere : public hittable {
 
         virtual bool hit(
             const ray& r, double t_min, double t_max, hit_record& rec) const override;
+        virtual pair<double, double> bound(int dim) const override;
+        
 
     public:
         point3 center;
@@ -44,6 +46,10 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
     rec.mat_ptr = mat_ptr;
 
     return true;
+}
+
+pair<double, double> sphere::bound(int dim) const {
+    return pair<double, double>(center[dim] - radius, center[dim] + radius);
 }
 
 #endif
