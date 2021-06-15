@@ -133,7 +133,8 @@ int main() {
 
     aspect_ratio = 1.0;
     image_width = 600;
-    samples_per_pixel = 20;
+    image_height = static_cast<int>(image_width / aspect_ratio);
+    samples_per_pixel = 3;
     lookfrom = point3(278, 278, -800);
     lookat = point3(278, 278, 0);
     double vfov = 40.0;
