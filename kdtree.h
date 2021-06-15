@@ -101,9 +101,9 @@ kdnode *kdtree::__build_tree(vector<shared_ptr<hittable>> &objects, int depth, b
         vector<shared_ptr<hittable>> lobjects, robjects;
         for (auto &object : objects){
             auto bound = object->bound(cur->axis);
-            if (bound.first < cur->pos - epsilon)
+            if (bound.first < cur->pos + epsilon)
                 lobjects.push_back(object);
-            if (bound.second > cur->pos + epsilon)
+            if (bound.second > cur->pos - epsilon)
                 robjects.push_back(object);
         }
 
