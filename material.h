@@ -165,7 +165,7 @@ class dielectric : public material {
 
 class light : public material  {
     public:
-        light(color c) : emit(c) {
+        light(const color& c) : emit(c) {
             is_reflect = false;
             is_refract = false;
             is_light = true;

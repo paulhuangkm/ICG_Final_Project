@@ -8,10 +8,11 @@ class rectangle : public hittable {
     public:
         rectangle() {}
         rectangle(double xa, double xb, double ya, double yb, double za, double zb, int nd, double k0, shared_ptr<material> m)
-            : x0(xa), x1(xb), y0(ya), y1(yb), z0(za), z1(zb), norm_direction(nd), k(r0), mat_ptr(m) {};
+            : x0(xa), x1(xb), y0(ya), y1(yb), z0(za), z1(zb), norm_direction(nd), k(k0), mat_ptr(m) {};
 
         virtual bool hit(
             const ray& r, double t_min, double t_max, hit_record& rec) const override;
+        virtual pair<double, double> bound(int dim) const override;
 
     public:
         int norm_direction; // 1: x=k,  2: y=k,  3: z=k
@@ -71,6 +72,33 @@ bool rectangle::hit(const ray& r, double t_min, double t_max, hit_record& rec) c
     rec.mat_ptr = mat_ptr;
 
     return true;
+}
+
+pair<double, double> rectangle::bound(int dim) const {
+    switch(norm_direction) {
+        case 1:
+            if (dim == 0)
+                return pair<double, double>(k, k);
+            else if (dim == 1)
+                return pair<double, double>(y0, y1);
+            else
+                return pair<double, double>(z0, z1);
+        case 2:
+            if (dim == 0)
+                return pair<double, double>(x0, x1);
+            else if (dim == 1)
+                return pair<double, double>(k, k);
+            else
+                return pair<double, double>(z0, z1);
+        case 3:
+            if (dim == 0)
+                return pair<double, double>(x0, x1);
+            else if (dim == 1)
+                return pair<double, double>(y0, y1);
+            else
+                return pair<double, double>(k, k);
+    }
+    return pair<double, double>(0, 0);
 }
 
 #endif
