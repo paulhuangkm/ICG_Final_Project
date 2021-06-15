@@ -5,8 +5,10 @@
 #include "sphere.h"
 #include "camera.h"
 #include "material.h"
-
+#include "rectangle.h"
 #include <stdio.h>
+
+#define NONE 0
 
 color ray_color(const ray& r, const hittable& world, int depth, color prev_attenuation) {
     hit_record rec;
@@ -85,19 +87,37 @@ hittable_list random_scene() {
     return world;
 }
 
+hittable_list cornell_box() {
+    hittable_list objects;
+
+    auto red   = make_shared<lambertian>(color(.65, .05, .05));
+    auto white = make_shared<lambertian>(color(.73, .73, .73));
+    auto green = make_shared<lambertian>(color(.12, .45, .15));
+    auto light_source = make_shared<light>(color(15.0, 15.0, 15.0));
+
+    objects.add(make_shared<rectangle>(NONE, NONE, 0, 555, 0, 555, 1, 555, green));
+    objects.add(make_shared<rectangle>(NONE, NONE, 0, 555, 0, 555, 1, 0, red));
+    objects.add(make_shared<rectangle>(213, 343, NONE, NONE, 227, 332, 2, 554, light_source));
+    objects.add(make_shared<rectangle>(0, 555, NONE, NONE, 0, 555, 2, 0, white));
+    objects.add(make_shared<rectangle>(0, 555, NONE, NONE, 0, 555, 2, 555, white));
+    objects.add(make_shared<rectangle>(0, 555, 0, 555, NONE, NONE, 3, 555, white));
+
+    return objects;
+}
+
 int main() {
 
     // Image
 
-    const auto aspect_ratio = 3.0 / 2.0;
-    const int image_width = 1200;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 500;
-    const int max_depth = 50;
+    auto aspect_ratio = 3.0 / 2.0;
+    int image_width = 1200;
+    int image_height = static_cast<int>(image_width / aspect_ratio);
+    int samples_per_pixel = 500;
+    int max_depth = 50;
 
     // World
 
-    auto world = random_scene();
+    auto world = cornell_box();
 
     // Camera
 
@@ -107,7 +127,14 @@ int main() {
     auto dist_to_focus = 10.0;
     auto aperture = 0.1;
 
-    camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
+    aspect_ratio = 1.0;
+    image_width = 600;
+    samples_per_pixel = 20;
+    lookfrom = point3(278, 278, -800);
+    lookat = point3(278, 278, 0);
+    double vfov = 40.0;
+
+    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus);
 
 
     // Render

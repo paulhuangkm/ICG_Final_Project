@@ -8,7 +8,7 @@ class rectangle : public hittable {
     public:
         rectangle() {}
         rectangle(double xa, double xb, double ya, double yb, double za, double zb, int nd, double k0, shared_ptr<material> m)
-            : x0(xa), x1(xb), y0(ya), y1(yb), z0(za), z1(zb), norm_direction(nd), k(r0), mat_ptr(m) {};
+            : x0(xa), x1(xb), y0(ya), y1(yb), z0(za), z1(zb), norm_direction(nd), k(k0), mat_ptr(m) {};
 
         virtual bool hit(
             const ray& r, double t_min, double t_max, hit_record& rec) const override;
