@@ -30,6 +30,7 @@ class camera {
 
             lens_radius = aperture / 2;
         }
+        camera() {}
 
 
         ray get_ray(double s, double t) const {
