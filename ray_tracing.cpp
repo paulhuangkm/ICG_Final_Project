@@ -6,9 +6,10 @@
 #include "camera.h"
 #include "material.h"
 #include "rectangle.h"
+#include "triangle.h"
 #define NONE 0
-
-#include <stdio.h>
+// 0: random/triangle scene, 1: cornell box
+#define world_type 0
 
 color ray_color(const ray& r, const hittable& world, int depth, color prev_attenuation) {
     hit_record rec;
@@ -37,6 +38,8 @@ color ray_color(const ray& r, const hittable& world, int depth, color prev_atten
 
     vec3 unit_direction = unit_vector(r.direction());
     auto t = 0.5*(unit_direction.y() + 1.0);
+    if(world_type==1)
+        return color(0,0,0);
     return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
 }
 
@@ -95,49 +98,86 @@ hittable_list cornell_box() {
     auto green = make_shared<lambertian>(color(.12, .45, .15));
     auto light_source = make_shared<light>(color(15.0, 15.0, 15.0));
 
+    auto material1 = make_shared<dielectric>(1.5, color(1.0, 1.0, 1.0));
+    objects.add(make_shared<sphere>(point3(280, 200, 280), 50.0, material1));
+
     objects.add(make_shared<rectangle>(NONE, NONE, 0, 555, 0, 555, 1, 555, green));
     objects.add(make_shared<rectangle>(NONE, NONE, 0, 555, 0, 555, 1, 0, red));
-    objects.add(make_shared<rectangle>(213, 343, NONE, NONE, 227, 332, 2, 556, light_source)); // 光源
+    objects.add(make_shared<rectangle>(213, 343, NONE, NONE, 227, 332, 2, 554, light_source));
     objects.add(make_shared<rectangle>(0, 555, NONE, NONE, 0, 555, 2, 0, white));
-    objects.add(make_shared<rectangle>(0, 555, NONE, NONE, 0, 555, 2, 555, white)); // 天花板
+    objects.add(make_shared<rectangle>(0, 555, NONE, NONE, 0, 555, 2, 555, white));
     objects.add(make_shared<rectangle>(0, 555, 0, 555, NONE, NONE, 3, 555, white));
+
+    return objects;
+}
+
+hittable_list triangle_scene() {
+    hittable_list objects;
+
+    auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
+    objects.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
+
+    for (int a = -41; a < 41; a+=5) {
+        for (int b = -41; b < 41; b+=5) {
+            auto choose_mat = random_double();
+            point3 p1(a + 0.9*random_double(), 0.4 + 3.0*random_double(), b + 0.9*random_double());
+            point3 p2(p1.x() + random_double(1.0, 4.0), p1.y(), p1.z() - random_double(1.0, 4.0));
+            point3 p3(p1.x() + random_double(0, 4.0), p1.y() + random_double(1.0, 4.0), p1.z() + random_double(0, 4.0));
+            shared_ptr<material> sphere_material;
+
+            if (choose_mat < 0.8) {
+                // diffuse
+                auto albedo = color::random() * color::random();
+                sphere_material = make_shared<lambertian>(albedo);
+                objects.add(make_shared<triangle>(p1, p2, p3, sphere_material));
+            } else {
+                // metal
+                auto albedo = color::random(0.5, 1);
+                auto fuzz = random_double(0, 0.5);
+                sphere_material = make_shared<metal>(albedo, fuzz);
+                objects.add(make_shared<triangle>(p1, p2, p3, sphere_material));
+            }
+        }
+    }
 
     return objects;
 }
 
 int main() {
 
-    // Image
+    int max_depth = 50;
 
+    // Random Scene
     auto aspect_ratio = 3.0 / 2.0;
     int image_width = 1200;
     int image_height = static_cast<int>(image_width / aspect_ratio);
-    int samples_per_pixel = 500;
-    int max_depth = 50;
+    int samples_per_pixel = 10;
+    point3 lookfrom(39, 6, 9);
+    point3 lookat(0,0,0);
+    vec3 vup(0,1,0);
+    auto dist_to_focus = 30.0;
+    auto aperture = 0.1;
+    double vfov = 20.0;
+
+    // Cornell Box
+    // auto aspect_ratio = 1.0;
+    // int image_width = 600;
+    // int image_height = static_cast<int>(image_width / aspect_ratio);
+    // int samples_per_pixel = 200;
+    // point3 lookfrom(278, 278, -800);
+    // point3 lookat(278, 278, 0);
+    // vec3 vup(0,1,0);
+    // auto dist_to_focus = 10.0;
+    // auto aperture = 0.1;
+    // double vfov = 40.0;
 
     // World
 
-    auto world = cornell_box();
+    auto world = triangle_scene();
 
     // Setup kdtree
     fprintf(stderr, "%d\n", world.objects.size());
     world.build();
-
-    // Camera
-
-    point3 lookfrom(13,2,3);
-    point3 lookat(0,0,0);
-    vec3 vup(0,1,0);
-    auto dist_to_focus = 10.0;
-    auto aperture = 0.1;
-
-    aspect_ratio = 1.0;
-    image_width = 600;
-    image_height = static_cast<int>(image_width / aspect_ratio);
-    samples_per_pixel = 3;
-    lookfrom = point3(278, 278, -800);
-    lookat = point3(278, 278, 0);
-    double vfov = 40.0;
 
     camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus);
 

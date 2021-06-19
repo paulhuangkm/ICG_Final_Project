@@ -3,6 +3,7 @@
 
 #include "hittable.h"
 #include "vec3.h"
+#define d 0.0001
 
 class rectangle : public hittable {
     public:
@@ -78,7 +79,7 @@ pair<double, double> rectangle::bound(int dim) const {
     switch(norm_direction) {
         case 1:
             if (dim == 0)
-                return pair<double, double>(k-0.0001, k+0.0001);
+                return pair<double, double>(k - d, k + d);
             else if (dim == 1)
                 return pair<double, double>(y0, y1);
             else
@@ -87,7 +88,7 @@ pair<double, double> rectangle::bound(int dim) const {
             if (dim == 0)
                 return pair<double, double>(x0, x1);
             else if (dim == 1)
-                return pair<double, double>(k-0.0001, k+0.0001);
+                return pair<double, double>(k - d, k + d);
             else
                 return pair<double, double>(z0, z1);
         case 3:
@@ -96,7 +97,7 @@ pair<double, double> rectangle::bound(int dim) const {
             else if (dim == 1)
                 return pair<double, double>(y0, y1);
             else
-                return pair<double, double>(k-0.0001, k+0.0001);
+                return pair<double, double>(k - d, k + d);
     }
     return pair<double, double>(0, 0);
 }

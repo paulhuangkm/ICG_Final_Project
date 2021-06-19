@@ -101,13 +101,14 @@ kdnode *kdtree::__build_tree(vector<shared_ptr<hittable>> &objects, int depth, b
         vector<shared_ptr<hittable>> lobjects, robjects;
         for (auto &object : objects){
             auto bound = object->bound(cur->axis);
-            if (bound.first < cur->pos + epsilon)
+            if (bound.first < cur->pos - epsilon)
                 lobjects.push_back(object);
-            if (bound.second > cur->pos - epsilon)
+            if (bound.second > cur->pos + epsilon)
                 robjects.push_back(object);
         }
 
-        if ((lobjects.size() == objects.size() && robjects.size() == objects.size()) || min_t.first == infinity){
+        if ( ((lobjects.size() + robjects.size()) >= objects.size() * 1.4) ||
+             min_t.first == infinity ){
             ++depth;
             continue;
         }
