@@ -10,8 +10,8 @@
 #include <stdio.h>
 
 #define NONE 0
-// 0: random/triangle scene, 1: cornell box
-#define world_type 0
+// 0: random scene, 1: cornell box, 2: triangle scene
+#define world_type 2
 
 color ray_color(const ray& r, const hittable& world, int depth, color prev_attenuation) {
     hit_record rec;
@@ -148,34 +148,51 @@ hittable_list triangle_scene() {
 int main() {
 
     int max_depth = 50;
-
-    // Random Scene
-    auto aspect_ratio = 3.0 / 2.0;
-    int image_width = 1200;
-    int image_height = static_cast<int>(image_width / aspect_ratio);
-    int samples_per_pixel = 10;
-    point3 lookfrom(39, 6, 9);
-    point3 lookat(0,0,0);
     vec3 vup(0,1,0);
-    auto dist_to_focus = 30.0;
     auto aperture = 0.1;
-    double vfov = 20.0;
+    int samples_per_pixel = 200;
 
-    // Cornell Box
-    // auto aspect_ratio = 1.0;
-    // int image_width = 600;
-    // int image_height = static_cast<int>(image_width / aspect_ratio);
-    // int samples_per_pixel = 200;
-    // point3 lookfrom(278, 278, -800);
-    // point3 lookat(278, 278, 0);
-    // vec3 vup(0,1,0);
-    // auto dist_to_focus = 10.0;
-    // auto aperture = 0.1;
-    // double vfov = 40.0;
-
-    // World
-
-    auto world = triangle_scene();
+    double aspect_ratio;
+    int image_width;
+    int image_height;
+    point3 lookfrom;
+    point3 lookat;
+    double dist_to_focus;
+    double vfov;
+    hittable_list world;
+    
+    switch(world_type){
+        case 0:
+            aspect_ratio = 3.0 / 2.0;
+            image_width = 1200;
+            image_height = static_cast<int>(image_width / aspect_ratio);
+            lookfrom = point3(13, 2, 3);
+            lookat = point3(0,0,0);
+            dist_to_focus = 10.0;
+            vfov = 20.0;
+            world = random_scene();
+            break;
+        case 1:
+            aspect_ratio = 1.0;
+            image_width = 600;
+            image_height = static_cast<int>(image_width / aspect_ratio);
+            lookfrom = point3(278, 278, -800);
+            lookat = point3(278, 278, 0);
+            dist_to_focus = 10.0;
+            vfov = 40.0;
+            world = cornell_box();
+            break;
+        case 2:
+            aspect_ratio = 3.0 / 2.0;
+            image_width = 1200;
+            image_height = static_cast<int>(image_width / aspect_ratio);
+            lookfrom = point3(39, 6, 9);
+            lookat = point3(0,0,0);
+            dist_to_focus = 30.0;
+            vfov = 20.0;
+            world = triangle_scene();
+            break;
+    }
 
     camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus);
 
